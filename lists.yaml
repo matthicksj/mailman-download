@@ -13,8 +13,17 @@ mailman:
   # The URL context for private archives
   private_context: '/mailman/private'
 
+# Directory holding original archives in txt.gz format
+archive_dir: '~/mail-archives'
+
 # Default for Thunderbird on Fedora
 local_mail: '~/.thunderbird/*.default/Mail/Local\ Folders'
+
+# Output formats:
+# MBOX_SINGLE - One single MBOX file (e.g. Thunderbird)
+# MBOX_BZIP2 - Individual months as MBOX files compressed with bzip2 -9
+# MBOX - Individual months as MBOX files
+format: "MBOX_SINGLE"
 
 # The default years to download
 years: ['2012', '2013']

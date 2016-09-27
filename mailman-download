@@ -1,4 +1,4 @@
-#!/bin/ruby
+#!/usr/bin/env ruby
 
 # This script downloads all the archives for a given set of lists so that you
 # can keep a locally, searchable copy.  It will create a mail-archive directory
@@ -174,7 +174,7 @@ def download(list, years, user, password, mailman)
 end
 
 # Unzip all the gzip format mail files
-def rebuild_archive(archive, local_mail)
+def rebuild_archive_single_mbox(archive, local_mail)
   puts "Rebuilding archive"
 
   # Remove any existing archive file
@@ -193,6 +193,20 @@ def rebuild_archive(archive, local_mail)
   `mv #{archive} #{local_mail}`
 end
 
+def rebuild_archive_mbox(archive, local_mail, bzip2)
+  puts "Rebuilding archive"
+  Dir.glob("*.gz").each do |file|
+    puts "Renaming and compressing #{file}"
+    newfile = archive + '-' + file.split('.').first
+    if bzip2
+      `gunzip -q #{file} -c 2> /dev/null | bzip2 -9 2> /dev/null >> #{local_mail}/#{newfile}.bz2`
+    else
+      `gunzip -q #{file} -c 2> /dev/null >> #{local_mail}/#{newfile}`
+    end
+    FileUtils.rm_f file
+  end
+end
+
 options = {}
 optparse = OptionParser.new do|opts|
    opts.banner = "Usage: mailman-download config-file"
@@ -203,9 +217,12 @@ optparse = OptionParser.new do|opts|
    opts.on( '-c', '--config FILE', '[Default: ~/lists.yaml] Specify a custom config file' ) do |file|
      options[:config] = file
    end
-   options[:archive_dir] = File.expand_path("~/mail-archives")
+   options[:archive_dir] = "~/mail-archives"
    opts.on( '-a', '--archive DIR', '[Default: ~/mail-archives] Specify a custom archive storage location' ) do |file|
      options[:archive_dir] = file
+   end
+   opts.on( '-t', '--format SINGLE_MBOX|MBOX_BZIP2|MBOX', '[Default: SINGLE_MBOX] Output format' ) do |fmt|
+     options[:format] = fmt
    end
    opts.on( '-f', '--force', 'Forces a rebuild of the archive' ) do
      options[:force_rebuild] = true
@@ -231,7 +248,7 @@ $config = YAML.load_file(config_file)
 
 # If the archive location exists,
 # make sure it's actually a directory
-archives = options[:archive_dir]
+archives = File.expand_path($config['archive_dir'] || options[:archive_dir])
 if Dir.exists?(archives) and !File.directory?(archives)
   puts "ERROR - archive directory (#{archives}) is not a directory"
   exit 2
@@ -240,7 +257,6 @@ end
 # Create and enter the archives directory
 FileUtils.mkdir_p archives
 FileUtils.cd archives
-
 $config['lists'].each do |list|
   # Parse the list structure
   name = list['name']
@@ -257,8 +273,20 @@ $config['lists'].each do |list|
 
   # Unzip them
   archive_name = list['archive_name'] || name
-  rebuild_archive(archive_name + "-archive", $config['local_mail']) if rebuild or options[:force_rebuild]
+  fmt = $config['format'] || options[:format]
+  case (fmt)
+  when /^SINGLE_MBOX$/i
+    rebuild_archive_single_mbox(archive_name + "-archive", $config['local_mail']) if rebuild or options[:force_rebuild]
+  when /^MBOX_BZIP2$/i
+    rebuild_archive_mbox(archive_name + "-archive", $config['local_mail'], true) if rebuild or options[:force_rebuild]
+  when /^MBOX$/i
+    rebuild_archive_mbox(archive_name + "-archive", $config['local_mail'], false) if rebuild or options[:force_rebuild]
+  else
+    puts "ERROR - unknown format: #{fmt}"
+    exit 3
+  end
 
   # Back up to the archives directory
   FileUtils.cd ".."
 end
+
