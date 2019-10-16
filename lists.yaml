@@ -3,7 +3,8 @@
 # This is a sample list configuration file
 #
 
-# The mailman server configuration
+# Default values for the mailman server configuration. 
+# No need to change anything here. Edit lists below
 mailman:
   server: 'post-office.example.com'
 
@@ -14,21 +15,35 @@ mailman:
   private_context: '/mailman/private'
 
 # Default for Thunderbird on Fedora
-local_mail: '~/.thunderbird/*.default/Mail/Local\ Folders'
+# Replace ID with your own profile id `ls ~/.thunderbird/ | grep default | cut -d. -f1`
+local_mail: '~/.thunderbird/ID.default/Mail/Local\ Folders'
 
 # The default years to download
-years: ['2012', '2013']
+years: ['2018', '2019']
 
+# This is the main configuration section
+# If the mailing list you are trying to download publicly offers its archives
+# don't put the "password" parameter otherwise the script will try to authenticate
 lists:
-  - name: 'some-list'
-    user: 'user@example.com'
-    password: 'password'
+  # Real example for ProxMox mailing list 
+  # This is the archive URL https://pve.proxmox.com/pipermail/pve-user/
+#  - name: 'pve-user'
+#    mailman:
+#      server: 'pve.proxmox.com'
+#      public_context: '/pipermail'
 
-  - name: 'some-other-list'
-    archive_name: 'my-different-archive-name'
+#  - name: 'some-private-list'
+#    user: 'user@example.com'
+#    password: 'password'
+#    mailman:
+#      server: 'lists.example.com'
+#      private_context: '/mailman/private'
 
-  - name: 'openstack-dev'
-    years: ['2012', '2013']
-    mailman:
-      server: 'lists.openstack.org'
-      public_context: '/pipermail'
+#  - name: 'some-other-pubic-list'
+#    archive_name: 'my-different-archive-name'
+
+#  - name: 'openstack-dev'
+#    years: ['2012', '2013']
+#    mailman:
+#      server: 'lists.openstack.org'
+#      public_context: '/pipermail'
